@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gram Panchayat Account Opening Status Tracker</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #0284c7;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 { margin: 0 0 8px 0; font-size: 24px; }
+        p { margin: 0; opacity: 0.9; }
+
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .kpi-card h3 { margin: 0 0 8px 0; font-size: 14px; color: #64748b; text-transform: uppercase; }
+        .kpi-card .number { font-size: 28px; font-weight: bold; color: var(--primary); }
+
+        .filters {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 6px; color: #475569; }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th { background-color: #f1f5f9; color: #334155; font-weight: 600; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending { background-color: #fef3c7; color: #d97706; }
+        .status-submitted { background-color: #dbeafe; color: #2563eb; }
+        .status-opened { background-color: #dcfce7; color: #16a34a; }
+
+        .file-upload-box {
+            border: 2px dashed var(--border);
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Gram Panchayat Live Status Tracker</h1>
+        <p>Monitoring 6,194+ Gram Panchayats Account Form Submission & Opening Status</p>
+    </header>
+
+    <div class="file-upload-box">
+        <label for="csvFileInput"><strong>Upload CSV File (panchayat.csv):</strong></label><br><br>
+        <input type="file" id="csvFileInput" accept=".csv" />
+    </div>
+
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <h3>Total Panchayats</h3>
+            <div class="number" id="totalCount">0</div>
+        </div>
+        <div class="kpi-card">
+            <h3>Forms Submitted</h3>
+            <div class="number" id="submittedCount">0</div>
+        </div>
+        <div class="kpi-card">
+            <h3>Accounts Opened</h3>
+            <div class="number" id="openedCount">0</div>
+        </div>
+        <div class="kpi-card">
+            <h3>Pending</h3>
+            <div class="number" id="pendingCount">0</div>
+        </div>
+    </div>
+
+    <div class="filters">
+        <div class="filter-group">
+            <label for="districtSelect">District</label>
+            <select id="districtSelect" onchange="applyFilters()">
+                <option value="">All Districts</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="blockSelect">Block</label>
+            <select id="blockSelect" onchange="applyFilters()">
+                <option value="">All Blocks</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="statusSelect">Account Opening Status</label>
+            <select id="statusSelect" onchange="applyFilters()">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Form Submitted">Form Submitted</option>
+                <option value="Account Opened">Account Opened</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="searchInput">Search Panchayat</label>
+            <input type="text" id="searchInput" placeholder="Type Panchayat name..." onkeyup="applyFilters()" />
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>District</th>
+                    <th>Block</th>
+                    <th>Gram Panchayat</th>
+                    <th>Form Submission Status</th>
+                    <th>Account Opening Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="6" style="text-align:center;">Please upload `panchayat.csv` above to load records.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let rawData = [];
+
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const lines = e.target.result.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            
+            rawData = [];
+            for(let i=1; i<lines.length; i++) {
+                if(!lines[i].trim()) continue;
+                const cols = lines[i].split(',').map(c => c.trim());
+                if(cols.length >= 3) {
+                    rawData.push({
+                        id: i,
+                        District: cols[0],
+                        Block: cols[1],
+                        Gram_Panchayat: cols[2],
+                        Form_Status: 'Pending',
+                        Account_Status: 'Pending'
+                    });
+                }
+            }
+            populateDropdowns();
+            applyFilters();
+        };
+        reader.readAsText(file);
+    });
+
+    function populateDropdowns() {
+        const districts = [...new Set(rawData.map(item => item.District))].sort();
+        const districtSelect = document.getElementById('districtSelect');
+        districtSelect.innerHTML = '<option value="">All Districts</option>';
+        districts.forEach(d => {
+            districtSelect.innerHTML += `<option value="${d}">${d}</option>`;
+        });
+    }
+
+    function applyFilters() {
+        const selectedDistrict = document.getElementById('districtSelect').value;
+        const selectedBlock = document.getElementById('blockSelect').value;
+        const selectedStatus = document.getElementById('statusSelect').value;
+        const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+
+        // Update block options dynamically
+        if(selectedDistrict && !selectedBlock) {
+            const blocks = [...new Set(rawData.filter(r => r.District === selectedDistrict).map(r => r.Block))].sort();
+            const blockSelect = document.getElementById('blockSelect');
+            blockSelect.innerHTML = '<option value="">All Blocks</option>';
+            blocks.forEach(b => {
+                blockSelect.innerHTML += `<option value="${b}">${b}</option>`;
+            });
+        }
+
+        const filtered = rawData.filter(item => {
+            const matchDistrict = !selectedDistrict || item.District === selectedDistrict;
+            const matchBlock = !selectedBlock || item.Block === selectedBlock;
+            const matchStatus = !selectedStatus || item.Account_Status === selectedStatus;
+            const matchSearch = !searchQuery || item.Gram_Panchayat.toLowerCase().includes(searchQuery);
+            return matchDistrict && matchBlock && matchStatus && matchSearch;
+        });
+
+        renderKPIs();
+        renderTable(filtered.slice(0, 100)); // Render top 100 results for performance
+    }
+
+    function renderKPIs() {
+        document.getElementById('totalCount').innerText = rawData.length;
+        document.getElementById('submittedCount').innerText = rawData.filter(r => r.Form_Status === 'Submitted').length;
+        document.getElementById('openedCount').innerText = rawData.filter(r => r.Account_Status === 'Account Opened').length;
+        document.getElementById('pendingCount').innerText = rawData.filter(r => r.Account_Status === 'Pending').length;
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        if(data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No records found.</td></tr>';
+            return;
+        }
+
+        data.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.District}</td>
+                    <td>${item.Block}</td>
+                    <td><b>${item.Gram_Panchayat}</b></td>
+                    <td><span class="status-badge ${item.Form_Status === 'Submitted' ? 'status-submitted' : 'status-pending'}">${item.Form_Status}</span></td>
+                    <td><span class="status-badge ${item.Account_Status === 'Account Opened' ? 'status-opened' : 'status-pending'}">${item.Account_Status}</span></td>
+                    <td>
+                        <button onclick="updateStatus(${item.id})">Update Status</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function updateStatus(id) {
+        const record = rawData.find(r => r.id === id);
+        if(record) {
+            if(record.Account_Status === 'Pending') {
+                record.Form_Status = 'Submitted';
+                record.Account_Status = 'Form Submitted';
+            } else if(record.Account_Status === 'Form Submitted') {
+                record.Account_Status = 'Account Opened';
+            } else {
+                record.Form_Status = 'Pending';
+                record.Account_Status = 'Pending';
+            }
+            applyFilters();
+        }
+    }
+</script>
+
+</body>
+</html>
